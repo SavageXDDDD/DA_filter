@@ -1,5 +1,5 @@
 module fir_filter_ROM #(
-parameter word_width  = 16,
+parameter word_width    = 16,
 parameter address_width = 3,
 parameter intitial_file = "file name"
 )(

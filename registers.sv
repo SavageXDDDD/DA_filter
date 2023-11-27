@@ -26,13 +26,12 @@ parameter N = 20
 input  logic             clk,
 input  logic             rst,
 input  logic             en,
-
 input  logic             D,
 
 output logic             Q
 );
 
-logic [N - 1] shift_reg;
+logic [N - 1 : 0] shift_reg;
 
 always_ff @(posedge clk) begin
     if (rst)
@@ -54,13 +53,12 @@ input  logic             clk,
 input  logic             rst,
 input  logic             we,
 input  logic             en,
-
 input  logic [N - 1 : 0] D,
 
 output logic             Q
 );
 
-logic [N - 1] shift_reg;
+logic [N - 1 : 0] shift_reg;
 
 always_ff @(posedge clk) begin
     if (rst)
