@@ -1,25 +1,27 @@
 module fir_filter_ROM #(
 parameter word_width  = 16,
-parameter filter_order = 3,
-parameter intitial_file = "eqw"
+parameter address_width = 3,
+parameter intitial_file = "file name"
 )(
-input  logic                               clk, 
-input  logic [filter_order - 1 : 0] addr,
+input logic  [address_width - 1 : 0] address,
+input logic                          en,
 
-output logic [word_width - 1          : 0] Q
+output logic [word_width - 1 : 0]    data
 );
 
-logic [word_width - 1 : 0] mem [filter_order - 2 : 0];
+logic [word_width - 1 : 0] mem [address_width - 2 : 0];
+//internal address for offset binary coding
+logic [address_width - 2 : 0] address_int;
 
+//initial memory from file
 initial begin
     $readmemh(intitial_file, mem);
 end
 
-logic [filter_order - 2 : 0] addr_int;
+//binary offeset address decoding
+assign address_int = address[address_width - 2 : 0] ^ 
+                   {(address_width - 1){address[address_width - 1]}};
 
-assign addr_int = addr[filter_order - 2 : 0] ^ {(filter_order - 1){addr[filter_order - 1]}};
-
-always_ff @(posedge clk)
-    Q <= mem [addr_int];
+assign data = en ? mem[address_int] : 'b0;
 
 endmodule
