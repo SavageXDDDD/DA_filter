@@ -1,4 +1,4 @@
-`define FIRST_OR_SINGLE_SUBFILTER 0
+`define FIRST_OR_SINGLE_SUBFILTER
 
 module subfilter #(
 parameter                      word_width      = 16,
