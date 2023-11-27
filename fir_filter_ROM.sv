@@ -1,6 +1,6 @@
 module fir_filter_ROM #(
 parameter word_width  = 16,
-parameter filter_order = 4,
+parameter filter_order = 3,
 parameter intitial_file = "eqw"
 )(
 input  logic                               clk, 
