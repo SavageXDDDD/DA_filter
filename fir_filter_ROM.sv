@@ -19,8 +19,8 @@ initial begin
 end
 
 //binary offeset address decoding
-assign address_int = address[address_width - 2 : 0] ^ 
-                   {(address_width - 1){address[address_width - 1]}};
+assign address_int = address[address_width - 1 : 1] ^ 
+                   {(address_width - 1){address[0]}};
 
 assign data = en ? mem[address_int] : 'b0;
 
