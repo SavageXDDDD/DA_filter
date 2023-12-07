@@ -3,10 +3,10 @@ parameter word_width    = 16,
 parameter address_width = 3,
 parameter intitial_file = "file name"
 )(
-input logic  [address_width - 1 : 0] address,
-input logic                          en,
+input  logic  [address_width - 1 : 0] address,
+input  logic                          en,
 
-output logic [word_width - 1 : 0]    data
+output logic     [word_width - 1 : 0] data
 );
 
 logic [word_width - 1 : 0] mem [address_width - 2 : 0];
