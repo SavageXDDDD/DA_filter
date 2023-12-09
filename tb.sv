@@ -2,6 +2,15 @@
 
 module tb ();
 
+logic clk;
+logic rst;
+logic en;
+logic ts;
+logic x_we;
+logic [15 : 0] x;
+logic [15 : 0] y;
+logic shift_out;
+
 subfilter #(
   .WORD_WIDTH  (16),
   .FILTER_ORDER(3),
@@ -28,13 +37,7 @@ subfilter #(
   .y(y)
 );
 
-logic clk;
-logic rst;
-logic en;
-logic ts;
-logic x_we;
-logic [15 : 0] x;
-logic [15 : 0] y;
+
 
 initial begin
   clk = 1'b1;
