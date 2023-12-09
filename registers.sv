@@ -1,19 +1,20 @@
-module param_reg #(
-parameter N = 20
+module init_reg #(
+parameter WIDTH = 20,
+parameter [WIDTH - 1 : 0] INIT_VAL = 20'hf0
 )(
-input  logic             clk,
-input  logic             rst,
-input  logic             en,
-input  logic [N - 1 : 0] D,
+input  logic                 clk,
+input  logic                 rst,
+input  logic                 en,
+input  logic [WIDTH - 1 : 0] D,
 
-output logic [N - 1 : 0] Q
+output logic [WIDTH - 1 : 0] Q
 );
 
 always_ff @(posedge clk) begin
-    if (rst) 
-        Q <= 'b0;
-    else if (en)
-        Q <= D;
+  if (rst) 
+    Q <= INIT_VAL;
+  else if (en)
+    Q <= D;
 end
 
 endmodule 
@@ -21,23 +22,23 @@ endmodule
 
 
 module shift_reg #(
-parameter N = 20
+parameter WIDTH = 20
 )(
-input  logic             clk,
-input  logic             rst,
-input  logic             en,
-input  logic             D,
+input  logic clk,
+input  logic rst,
+input  logic en,
+input  logic D,
 
-output logic             Q
+output logic Q
 );
 
-logic [N - 1 : 0] shift_reg;
+logic [WIDTH - 1 : 0] shift_reg;
 
 always_ff @(posedge clk) begin
-    if (rst)
-        shift_reg <= 'b0;
-    else if (en)
-        shift_reg <= {D, shift_reg[N - 1 : 1]};
+  if (rst)
+    shift_reg <= 'b0;
+  else if (en)
+    shift_reg <= {D, shift_reg[WIDTH - 1 : 1]};
 end
 
 assign Q = shift_reg[0];
@@ -47,18 +48,18 @@ endmodule
 
 
 module shift_reg_with_parellel_load #(
-parameter N = 20
+parameter WIDTH = 20
 )(
-input  logic             clk,
-input  logic             rst,
-input  logic             we,
-input  logic             en,
-input  logic [N - 1 : 0] D,
+input  logic                 clk,
+input  logic                 rst,
+input  logic                 we,
+input  logic                 en,
+input  logic [WIDTH - 1 : 0] D,
 
-output logic             Q
+output logic                 Q
 );
 
-logic [N - 1 : 0] shift_reg;
+logic [WIDTH - 1 : 0] shift_reg;
 
 always_ff @(posedge clk) begin
     if (rst)
@@ -66,7 +67,7 @@ always_ff @(posedge clk) begin
     else if (we) 
         shift_reg <= D;
     else if (en)
-        shift_reg <= {D[N -1], shift_reg[N - 1 : 1]};
+        shift_reg <= {D[WIDTH -1], shift_reg[WIDTH - 1 : 1]};
 end
 
 assign Q = shift_reg[0];

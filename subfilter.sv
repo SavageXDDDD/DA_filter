@@ -1,101 +1,109 @@
 `define FIRST_OR_SINGLE_SUBFILTER
 
 module subfilter #(
-parameter                      word_width      = 16,
-parameter                      filter_order    = 3,
-parameter                      intitial_file   = "file_name",
-parameter [word_width - 1 : 0] Q0_initial      = 16'h1312
+parameter                      WORD_WIDTH      = 16,
+parameter                      FILTER_ORDER    = 3,
+parameter                      INIT_FILE   = "rom_1.mem",
+parameter [WORD_WIDTH - 1 : 0] Q0_initial      = 16'h1312
 //if 1 -> add shift register with parallel load
 //parameter                      first_subfilter = 1
 )(
-input                                           clk, 
-input                                           rst,
-input                                           en,
-input                                           Ts,
-//input  [first_subfilter * (word_width - 1) : 0] x,
+input  logic                      clk, 
+input  logic                      rst,
+input  logic                      en,
+input  logic                      ts,
+//input  [first_subfilter * (WORD_WIDTH - 1) : 0] x,
 `ifdef FIRST_OR_SINGLE_SUBFILTER
-input x_we,
-input  [word_width - 1 : 0] x,
-`else 
-input  x,
+input  logic                      x_we,
+input  logic [WORD_WIDTH - 1 : 0] x,
+`else  
+input  logic                      x,
 `endif
 
 `ifndef FIRST_OR_SINGLE_SUBFILTER
-output                                          shift_out,
+output logic                      shift_out,
 `endif
-output [word_width - 1 : 0] y
+output logic [WORD_WIDTH - 1 : 0] y
 );
 
-localparam ROM_address_width = filter_order;
+localparam ROM_ADDR_WIDTH = FILTER_ORDER;
 
-logic [ROM_address_width - 1 : 0] ROM_address;
-logic [word_width - 1 : 0] ROM_out;
+logic [ROM_ADDR_WIDTH - 1 : 0] rom_address;
+logic     [WORD_WIDTH - 1 : 0] rom_out;
+logic     [WORD_WIDTH - 1 : 0] acc_out;
 
-logic add_sub_ctrl = Ts ^ ROM_address[0]; 
+logic add_sub_ctrl;
+assign add_sub_ctrl  = ts ^ rom_address[0]; 
+logic [WORD_WIDTH - 1 : 0] add_sub_out;
+logic [WORD_WIDTH - 1 : 0] acc_shifted;
+
+assign acc_shifted = acc_out >> 1;
+
+assign add_sub_out = add_sub_ctrl ? (acc_shifted + rom_out) 
+                           : (rom_out - acc_shifted); //?????????????????????????????????
 
 `ifndef FIRST_OR_SINGLE_SUBFILTER
-assign shift_out = ROM_address[ROM_address_width - 1];
+assign shift_out = rom_address[ROM_ADDR_WIDTH - 1];
 `endif
 
-fir_filter_ROM #(
-.word_width(word_width),
-.address_width(ROM_address_width), 
-.intitial_file(intitial_file)
-) fir_filter_ROM (
-.address(ROM_address),
-.en(en),
-.data(ROM_out)
+init_reg #(
+  .WIDTH(WORD_WIDTH),
+  .INIT_VAL(16'hD000)
+) govno_reg (
+  .clk(clk), 
+  .rst(rst), 
+  .en (add_sub_ctrl), 
+  .D  (add_sub_out), 
+  .Q  (acc_out)
 );
 
-genvar i;
+fir_filter_rom #(
+  .WORD_WIDTH(WORD_WIDTH),
+  .ADDR_WIDTH(ROM_ADDR_WIDTH), 
+  .INIT_FILE (INIT_FILE)
+) fir_filter_rom (
+  .address(rom_address),
+  .en     (en),
+  .data   (rom_out)
+);
+
 generate
-    `ifdef FIRST_OR_SINGLE_SUBFILTER
-    shift_reg_with_parellel_load #(
-    .N(word_width)
-    ) shift_reg_PL (
+  `ifdef FIRST_OR_SINGLE_SUBFILTER
+  shift_reg_with_parellel_load #(
+    .WIDTH(WORD_WIDTH)
+  ) shift_reg_PL (
     .clk(clk), 
     .rst(rst), 
-    .we(x_we), 
-    .en(en), 
-    .D(x), 
-    .Q(ROM_address[0])
-    );
-    `else 
-    shift_reg #(
-    .N(word_width)
-    ) shift_reg (
+    .we (x_we), 
+    .en (en), 
+    .D  (x), 
+    .Q  (rom_address[0])
+  );
+  `else 
+  shift_reg #(
+    .WIDTH(WORD_WIDTH)
+  ) shift_reg (
     .clk(clk), 
     .rst(rst), 
-    .en(en), 
-    .D(x), 
-    .Q(ROM_address[0])
-    );
-    `endif
+    .en (en), 
+    .D  (x), 
+    .Q  (rom_address[0])
+  );
+  `endif
 
-    for (i = 1; i < filter_order; i = i + 1)
-        shift_reg #(
-        .N(word_width)
-        ) shift_reg (
-        .clk(clk), 
-        .rst(rst), 
-        .en(en), 
-        .D(ROM_address[i - 1]), 
-        .Q(ROM_address[i])
-        );
+  for (genvar i = 1; i < FILTER_ORDER; i = i + 1) begin 
+    shift_reg #(
+      .WIDTH(WORD_WIDTH)
+    ) shift_reg (
+      .clk(clk), 
+      .rst(rst), 
+      .en (en), 
+      .D  (rom_address[i - 1]), 
+      .Q  (rom_address[i])
+    );
+  end
 endgenerate
 
-assign y = ROM_out;
+assign y = acc_out;
 
-//wire [word_width - 1 : 0] add_sub_out;
-//wire [word_width - 1 : 0] SWb_out;
-//wire [word_width - 1 : 0] add_sub_shifted;
-//
-//assign add_sub_out = add_sub ? SWb_out - ROM_out : SWb_out + ROM_out;
-//
-//assign add_sub_shifted = add_sub_out >> 1;
-//
-//assign SWb_out = SWb ? Q0_initial : add_sub_shifted;
-//
-//assign {y, add_sub_shifted} = SWa ? {add_sub_out, '0} : {'0, add_sub_out >> 1};
-    
 endmodule
