@@ -14,10 +14,20 @@ output logic [WORD_WIDTH - 1 : 0] y
 
 logic [WORD_WIDTH - 1 : 0] subfilter_out [SUBFILTER_COUNT - 1 : 0];
 logic [WORD_WIDTH - 1 : 0] filter_out;
-
+logic [WORD_WIDTH - 1 : 0] fir_in [SUBFILTER_COUNT - 1 : 0];
 logic filter_en;
 logic ts;
 logic x_we;
+logic zeros [WORD_WIDTH - 5 : 0] = '{default: '0};
+
+always_ff @(posedge clk) begin
+
+  fir_in[0] = {{x[15]}, {x[11]}, {x[7]}, {x[3]}, {12{1'b0}}};
+  fir_in[1] = {{x[14]}, {x[10]}, {x[6]}, {x[2]}, {12{1'b0}}};
+  fir_in[2] = {{x[13]}, {x[9] }, {x[5]}, {x[1]}, {12{1'b0}}};
+  fir_in[3] = {{x[12]}, {x[8] }, {x[4]}, {x[0]}, {12{1'b0}}};
+
+end
 
 always_comb begin 
   filter_out = 'h0;
@@ -27,7 +37,7 @@ always_comb begin
 end
 
 filter_cu #(
-  .WORD_WIDTH(WORD_WIDTH)
+  .WORD_WIDTH(WORD_WIDTH / 4)
 ) filter_cu (
   .clk      (clk), 
   .rst      (rst),
@@ -36,6 +46,8 @@ filter_cu #(
   .x_we     (x_we),
   .ts       (ts)
 );
+
+
 
 generate 
 
@@ -51,11 +63,7 @@ generate
       .en  (filter_en),
       .ts  (ts),
       .x_we(x_we),
-      .x   ({{x[WORD_WIDTH - 1 - i]}, 
-            {x[WORD_WIDTH - BAAT - 1 - i]},
-            {x[WORD_WIDTH - (BAAT * 2) - 1 - i]},
-            {x[WORD_WIDTH - (BAAT * 3) - 1 - i]},
-            {'h000}}),
+      .x   (fir_in[i]),
       .y   (subfilter_out[i])
     );
     end
