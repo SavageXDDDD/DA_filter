@@ -342,17 +342,9 @@ input  logic                      clk,
 input  logic                      rst,
 input  logic                      en,
 input  logic                      ts,
-//input  [first_subfilter * (WORD_WIDTH - 1) : 0] x,
-`ifdef FIRST_SUBFILTER
 input  logic                      x_we,
 input  logic [WORD_WIDTH - 1 : 0] x,
-`else  
-input  logic                      x,
-`endif
 
-`ifndef LAST_SUBFILTER
-output logic                      shift_out,
-`endif
 output logic [WORD_WIDTH - 1 : 0] y
 );
 
@@ -398,7 +390,6 @@ fir_filter_rom #(
 );
 
 generate
-  `ifdef FIRST_SUBFILTER
   shift_reg_with_parellel_load #(
     .WIDTH(WORD_WIDTH)
   ) shift_reg_PL (
@@ -409,17 +400,6 @@ generate
     .D  (x), 
     .Q  (rom_address[0])
   );
-  `else 
-  shift_reg #(
-    .WIDTH(WORD_WIDTH)
-  ) shift_reg (
-    .clk(clk), 
-    .rst(rst), 
-    .en (en), 
-    .D  (x), 
-    .Q  (rom_address[0])
-  );
-  `endif
 
   for (genvar i = 1; i < FILTER_ORDER; i = i + 1) begin 
     shift_reg #(

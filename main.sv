@@ -1,7 +1,7 @@
 module main #(
 parameter WORD_WIDTH = 16,
-parameter SUBFILTER_COUNT = 3,
-parameter SUBFILTER_ORDER = 3,
+parameter SUBFILTER_COUNT = 4,
+parameter SUBFILTER_ORDER = 5,
 parameter INIT_FILE       = "rom_1.mem"
 )(
 input  logic                      clk, 
@@ -22,7 +22,7 @@ logic x_we;
 always_comb begin 
   filter_out = 'h0;
   for (integer j = 0; j < SUBFILTER_COUNT; j = j + 1) begin 
-    filter_out = filter_out + subfilter_out[j];
+    filter_out = filter_out + ($signed(subfilter_out[j]) >>> j);
   end
 end
 
@@ -37,75 +37,28 @@ filter_cu #(
   .ts       (ts)
 );
 
-generate
-  if (SUBFILTER_COUNT == 1) begin   
-    subfilter_only #(
+generate 
+
+    for (genvar i = 0; i < SUBFILTER_COUNT; i = i + 1) begin 
+      subfilter_only #(
       .WORD_WIDTH  (WORD_WIDTH),
       .FILTER_ORDER(SUBFILTER_ORDER),
       .INIT_FILE   ("rom_1.mem"),
-      .Q0_initial  (16'hd000)
+      .Q0_initial  (16'hB000)
     ) subfilter (
       .clk (clk), 
       .rst (rst),
       .en  (filter_en),
       .ts  (ts),
       .x_we(x_we),
-      .x   (x),
-      .y   (subfilter_out[0])
+      .x   ({{x[WORD_WIDTH - 1 - i]}, 
+            {x[WORD_WIDTH - BAAT - 1 - i]},
+            {x[WORD_WIDTH - (BAAT * 2) - 1 - i]},
+            {x[WORD_WIDTH - (BAAT * 3) - 1 - i]},
+            {'h000}}),
+      .y   (subfilter_out[i])
     );
-  end
-  if (SUBFILTER_COUNT > 1) begin 
-    
-    logic [SUBFILTER_COUNT - 2 : 0] shift_out;
-
-    subfilter_first #(
-      .WORD_WIDTH  (WORD_WIDTH),
-      .FILTER_ORDER(SUBFILTER_ORDER),
-      .INIT_FILE   ("rom_1.mem"),
-      .Q0_initial  (16'hd000)
-    ) subfilter_first (
-      .clk      (clk), 
-      .rst      (rst),
-      .en       (filter_en),
-      .ts       (ts),
-      .x_we     (x_we),
-      .x        (x),
-      .shift_out(shift_out[0]),
-      .y        (subfilter_out[0])
-    );
-
-    for (genvar i = 1; i < SUBFILTER_COUNT - 1; i = i + 1) begin 
-      subfilter #(
-        .WORD_WIDTH  (WORD_WIDTH),
-        .FILTER_ORDER(SUBFILTER_ORDER),
-        .INIT_FILE   ("rom_1.mem"),
-        .Q0_initial  (16'hd000)
-      ) subfilter (
-        .clk      (clk), 
-        .rst      (rst),
-        .en       (filter_en),
-        .ts       (ts),
-        .x        (shift_out[i - 1]),
-        .shift_out(shift_out[i]),
-        .y        (subfilter_out[i])
-      );
     end
-   
-    subfilter_last #(
-      .WORD_WIDTH  (WORD_WIDTH),
-      .FILTER_ORDER(SUBFILTER_ORDER),
-      .INIT_FILE   ("rom_1.mem"),
-      .Q0_initial  (16'hd000)
-    ) subfilter_last (
-      .clk(clk), 
-      .rst(rst),
-      .en (filter_en),
-      .ts (ts),
-      .x  (shift_out[SUBFILTER_COUNT - 2]),
-      .y  (subfilter_out[SUBFILTER_COUNT - 1])
-    );
-
-  end
 endgenerate
 
 assign y = ts ? filter_out : 'h0;
